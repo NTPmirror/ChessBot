@@ -1,0 +1,37 @@
+{
+  // Screen capture polling interval in milliseconds
+  "interval_ms": 10,
+
+  // Local web server port
+  "web_port": 5873,
+
+  // Stream live match state to web interface
+  "enable_web": false,
+
+  // Board vertical Y-ratio for Oscar bot matches
+  "y_ratio_oscar": 0.355,
+
+  // Board vertical Y-ratio for real-player online matches
+  "y_ratio_people": 0.336,
+
+  // Directory containing piece templates
+  "figures_dir": "./Figures",
+
+  // Piece template matching error tolerance
+  "max_error_threshold": 500.0,
+
+  // Consecutive identical frames needed to confirm a move
+  "stability_threshold": 2,
+
+  // Automatically tap moves on the device
+  "auto_play": true,
+
+  // Claim XP rewards after the game ends
+  "auto_claim_xp": true,
+
+  // Automatically queue and start next match from lobby
+  "auto_start_game": true,
+
+  // Opponent mode: "People" (online) or "Oscar" (built-in bot)
+  "game_type": "People"
+}

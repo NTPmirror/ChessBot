@@ -1,0 +1,38 @@
+# Binaries and build artifacts
+Builds/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+chessbot
+chessbot-android
+duolingo-bot
+duolingo-bot-android
+DuolingoBot.exe
+
+# ADB platform tools cache
+.adb_cache/
+
+# Temporary screenshots and logs
+*.png
+*.jpg
+*.jpeg
+!Figures/*.png
+!Figures/WEB/*.png
+Figures/current_screen.png
+Figures/live_screen.png
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# OS / Temporary files
+tmp/
+temp/
+*.log
