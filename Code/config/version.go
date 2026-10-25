@@ -1,6 +1,6 @@
 package config
 
 var (
-	Version = "2.4"
+	Version = "2.5"
 	Author  = "ytika"
 )

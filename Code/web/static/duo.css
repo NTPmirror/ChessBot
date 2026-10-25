@@ -1,0 +1,219 @@
+/**
+ * Duolingo Design System (Feather) extracted styles
+ * Dark mode tokens, 3D button lip/press physics, typography & panels
+ */
+
+:root {
+  /* Duolingo Brand Palette */
+  --duo-green: #58cc02;
+  --duo-green-border: #58a700;
+  --duo-green-active: #46a302;
+  --duo-blue: #1cb0f6;
+  --duo-blue-border: #1899d6;
+  --duo-yellow: #ffc800;
+  --duo-yellow-border: #e5a400;
+  --duo-red: #ff4b4b;
+  --duo-red-border: #ea2b2b;
+  --duo-gray: #afafaf;
+  --duo-gray-border: #888888;
+  --duo-hare: #afafaf;
+  --duo-swan: #e5e5e5;
+
+  /* Duolingo Dark Theme Tokens */
+  --duo-dark-bg: #131f24;
+  --duo-card-bg: #1b272d;
+  --duo-card-border: #2b3940;
+  --duo-cell-light: #23343c;
+  --duo-cell-dark: #17242a;
+  --duo-text-main: #ffffff;
+  --duo-text-muted: #8e9da4;
+  --duo-text-subtle: #5b686e;
+
+  /* Component Tokens */
+  --web-ui_button-border-radius: 16px;
+  --web-ui_button-font-size: 14px;
+  --web-ui_button-letter-spacing: 0.8px;
+  --web-ui_button-lip-width: 4px;
+  --web-ui_button-transition-lip: 0.12s cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Base Reset & Fonts */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--duo-dark-bg);
+  color: var(--duo-text-main);
+  font-family: "DIN Next Rounded LT Pro", "DIN Next for Duolingo", "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  letter-spacing: 0.2px;
+}
+
+/* Duolingo 3D Tactile Buttons */
+.duo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-weight: 800;
+  font-size: var(--web-ui_button-font-size);
+  letter-spacing: var(--web-ui_button-letter-spacing);
+  line-height: 1.2;
+  border-radius: var(--web-ui_button-border-radius);
+  padding: 10px 20px;
+  color: #fff;
+  background-color: var(--btn-bg, var(--duo-green));
+  box-shadow: 0 var(--web-ui_button-lip-width) 0 var(--btn-border, var(--duo-green-border));
+  transition:
+    transform var(--web-ui_button-transition-lip),
+    box-shadow var(--web-ui_button-transition-lip),
+    filter 0.12s ease,
+    background-color 0.12s ease;
+  transform: translateZ(0);
+}
+
+.duo-btn:hover {
+  filter: brightness(1.08);
+}
+
+.duo-btn:active, .duo-btn.is-active {
+  transform: translateY(3px) translateZ(0);
+  box-shadow: 0 1px 0 var(--btn-border, var(--duo-green-border));
+}
+
+/* Button Color Variants */
+.duo-btn-green {
+  --btn-bg: var(--duo-green);
+  --btn-border: var(--duo-green-border);
+  color: #ffffff;
+}
+
+.duo-btn-blue {
+  --btn-bg: var(--duo-blue);
+  --btn-border: var(--duo-blue-border);
+  color: #ffffff;
+}
+
+.duo-btn-yellow {
+  --btn-bg: var(--duo-yellow);
+  --btn-border: var(--duo-yellow-border);
+  color: #ffffff;
+}
+
+.duo-btn-card {
+  --btn-bg: #2d4450;
+  --btn-border: #1c2f39;
+  color: #e5e5e5;
+}
+.duo-btn-card:hover {
+  --btn-bg: #364e5c;
+  --btn-border: #1c2f39;
+  color: #ffffff;
+}
+
+.duo-btn-sm {
+  padding: 7px 14px;
+  font-size: 12px;
+  --web-ui_button-border-radius: 12px;
+  --web-ui_button-lip-width: 3px;
+  box-shadow: 0 3px 0 var(--btn-border, var(--duo-green-border));
+}
+.duo-btn-sm:active, .duo-btn-sm.is-active {
+  transform: translateY(2px) translateZ(0);
+  box-shadow: 0 1px 0 var(--btn-border, var(--duo-green-border));
+}
+
+/* Duolingo Tactile Badges & Cards */
+.duo-card {
+  background-color: var(--duo-card-bg);
+  border: 2px solid var(--duo-card-border);
+  border-bottom: 4px solid var(--duo-card-border);
+  border-radius: 18px;
+}
+
+.duo-badge {
+  background-color: var(--duo-card-bg);
+  padding: 8px 16px;
+  border-radius: 14px;
+  border: 2px solid var(--duo-card-border);
+  border-bottom: 4px solid var(--duo-card-border);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--duo-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.duo-badge-val {
+  color: #ffffff;
+  font-weight: 800;
+}
+.duo-badge-val.green { color: var(--duo-green); }
+.duo-badge-val.yellow { color: var(--duo-yellow); }
+.duo-badge-val.blue { color: var(--duo-blue); }
+.duo-badge-val.red { color: var(--duo-red); }
+
+/* Duolingo Custom Slider */
+.duo-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 10px;
+  border-radius: 8px;
+  background: var(--duo-card-bg);
+  border: 2px solid var(--duo-card-border);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.duo-slider:hover {
+  border-color: var(--duo-green);
+}
+.duo-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--duo-green);
+  border: 3px solid var(--duo-green-border);
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--duo-green-border);
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), filter 0.15s ease;
+}
+.duo-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  filter: brightness(1.1);
+}
+.duo-slider::-webkit-slider-thumb:active {
+  transform: scale(0.95);
+}
+.duo-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--duo-green);
+  border: 3px solid var(--duo-green-border);
+  cursor: pointer;
+  box-shadow: 0 3px 0 var(--duo-green-border);
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), filter 0.15s ease;
+}
+.duo-slider::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  filter: brightness(1.1);
+}
+.duo-slider::-moz-range-thumb:active {
+  transform: scale(0.95);
+}

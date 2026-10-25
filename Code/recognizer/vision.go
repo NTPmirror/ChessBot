@@ -115,13 +115,22 @@ func Process(frame image.Image, templates []PieceTemplate, yRatio float64, maxEr
 			}
 
 			effectiveMaxErr := maxError
-			px := int(float64(col)*cellW) + 8
-			py := int(startY+float64(row)*cellH) + 8
-			cSample := frame.At(px, py)
-			sr, sg, sb, _ := cSample.RGBA()
-			sr8, sg8, sb8 := int(sr>>8), int(sg>>8), int(sb>>8)
-			if sr8 > 60 && sr8 >= sb8 && (sr8+sg8) > 130 {
-				effectiveMaxErr += 350.0
+			offsets := [][2]int{
+				{8, 8},
+				{int(cellW) - 8, 8},
+				{8, int(cellH) - 8},
+				{int(cellW) - 8, int(cellH) - 8},
+			}
+			for _, off := range offsets {
+				px := int(float64(col)*cellW) + off[0]
+				py := int(startY+float64(row)*cellH) + off[1]
+				cSample := frame.At(px, py)
+				sr, sg, sb, _ := cSample.RGBA()
+				sr8, sg8, sb8 := int(sr>>8), int(sg>>8), int(sb>>8)
+				if (sr8 > 60 && sr8 >= sb8 && (sr8+sg8) > 130) || (sr8 > 175 && sg8 > 135 && sb8 < 90 && (sr8-sb8 > 95)) {
+					effectiveMaxErr += 380.0
+					break
+				}
 			}
 
 			if minDiff > effectiveMaxErr {

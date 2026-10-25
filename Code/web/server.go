@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"chessbot/Code/assets"
+	"chessbot/Code/history"
 )
 
 const wsGUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -39,6 +40,14 @@ func StartWebServer(hub *WSHub, port int, figuresDir string) {
 	}
 
 	http.Handle("/figures/", cacheControlMiddleware(http.StripPrefix("/figures/", fileHandler)))
+
+	// Serve static assets (CSS, etc.) from embedded staticFS or local folder
+	staticSubFS, err := fs.Sub(staticFS, "static")
+	if err == nil {
+		http.Handle("/static/", cacheControlMiddleware(http.StripPrefix("/static/", http.FileServer(http.FS(staticSubFS)))))
+	} else {
+		http.Handle("/static/", cacheControlMiddleware(http.StripPrefix("/static/", http.FileServer(http.Dir(filepath.Join("Code", "web", "static"))))))
+	}
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		if strings.ToLower(r.Header.Get("Upgrade")) != "websocket" {
@@ -92,7 +101,14 @@ func StartWebServer(hub *WSHub, port int, figuresDir string) {
 		}
 	})
 
+	history.RegisterHistoryAPI(http.DefaultServeMux, filepath.Join("DATA", "History"))
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/history" {
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			io.WriteString(w, history.HistoryViewerHTML)
+			return
+		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		io.WriteString(w, DuolingoBoardHTML)
 	})

@@ -44,8 +44,14 @@ func boardSignature(board [8][8]string, state int, move, myTeam, bestMove string
 	return sb.String()
 }
 
-func (h *WSHub) Broadcast(board [8][8]string, state int, move, myTeam, bestMove string, from, to [2]int, isGameOver bool) {
+func (h *WSHub) Broadcast(board [8][8]string, state int, move, myTeam, bestMove string, from, to [2]int, isGameOver bool, isMyCheck bool, isOppCheck bool) {
 	sig := boardSignature(board, state, move, myTeam, bestMove, from, to, isGameOver)
+	if isMyCheck {
+		sig += ":mycheck"
+	}
+	if isOppCheck {
+		sig += ":oppcheck"
+	}
 	now := time.Now()
 
 	if sig == h.lastSig && now.Sub(h.lastBroadcast) < 250*time.Millisecond {
@@ -59,15 +65,18 @@ func (h *WSHub) Broadcast(board [8][8]string, state int, move, myTeam, bestMove 
 	h.lastBroadcast = now
 
 	data, err := json.Marshal(map[string]interface{}{
-		"board":        board,
-		"state":        state,
-		"move":         move,
-		"my_team":      myTeam,
-		"best_move":    bestMove,
-		"from":         from,
-		"to":           to,
-		"is_game_over": isGameOver,
-		"timestamp":    now.UnixMilli(),
+		"board":          board,
+		"state":          state,
+		"move":           move,
+		"my_team":        myTeam,
+		"best_move":      bestMove,
+		"from":           from,
+		"to":             to,
+		"is_game_over":   isGameOver,
+		"is_check":       isMyCheck,
+		"is_my_check":    isMyCheck,
+		"is_opp_check":   isOppCheck,
+		"timestamp":      now.UnixMilli(),
 	})
 	if err != nil {
 		return

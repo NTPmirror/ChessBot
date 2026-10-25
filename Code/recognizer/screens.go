@@ -117,18 +117,10 @@ func DetectActionButton(frame image.Image) (string, int, int) {
 }
 
 func GetPromotionQueenTap(screenW, screenH int, yRatio float64, toR, toC int) (int, int) {
-	cellW := float64(screenW) / 8.0
-	cellH := cellW
-	startY := float64(screenH) * yRatio
-
-	queenX := int((float64(toC) + 0.5) * cellW)
-
-	var queenY int
-	if toR == 0 {
-		queenY = int(startY + 0.5*cellH)
-	} else {
-		queenY = int(startY + 7.5*cellH)
-	}
-
+	// В Duolingo всплывает диалоговое окно выбора фигуры ("ПРЕВРАЩЕНИЕ ПЕШКИ")
+	// Ферзь расположен на первой позиции диалога слева: ~13% от ширины экрана,
+	// а по вертикали окно находится по центру доски: Y ~ 0.504 * screenH.
+	queenX := int(float64(screenW) * 0.13)
+	queenY := int(float64(screenH) * 0.504)
 	return queenX, queenY
 }

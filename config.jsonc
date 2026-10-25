@@ -18,7 +18,7 @@
   "figures_dir": "./Figures",
 
   // Piece template matching error tolerance
-  "max_error_threshold": 500.0,
+  "max_error_threshold": 650.0,
 
   // Consecutive identical frames needed to confirm a move
   "stability_threshold": 2,

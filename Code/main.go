@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"chessbot/Code/board"
 	"chessbot/Code/config"
 	"chessbot/Code/engine"
+	"chessbot/Code/history"
 	"chessbot/Code/recognizer"
 	"chessbot/Code/terminal"
 	"chessbot/Code/web"
@@ -20,6 +22,8 @@ func Run() {
 	helpFlag := flag.Bool("help", false, "Show help information")
 	hFlag := flag.Bool("h", false, "Show help information")
 	webFlag := flag.Bool("WEB", false, "Start live web board")
+	historyFlag := flag.Bool("history", false, "Record match history to JSON")
+	viewHistoryFlag := flag.Bool("view-history", false, "Start web server for viewing match history without chess engine")
 	cfgPath := flag.String("config", "config.jsonc", "Path to config file")
 
 	flag.Usage = func() {
@@ -30,6 +34,8 @@ func Run() {
 		fmt.Println("Options:")
 		fmt.Println("  -config <path>   Path to configuration file (default: config.jsonc)")
 		fmt.Println("  -WEB             Enable live web dashboard")
+		fmt.Println("  -history         Enable recording match history to JSON")
+		fmt.Println("  -view-history    Launch web server for viewing match history without chess engine")
 		fmt.Println("  -h, --help       Show this help message")
 		fmt.Println()
 	}
@@ -48,12 +54,35 @@ func Run() {
 		}
 	}
 
+	enableViewHistory := *viewHistoryFlag
+	for _, arg := range os.Args[1:] {
+		if strings.EqualFold(arg, "-view-history") || strings.EqualFold(arg, "--view-history") {
+			enableViewHistory = true
+			break
+		}
+	}
+
 	cfg := config.LoadConfig(*cfgPath)
+
+	if enableViewHistory {
+		historyDir := filepath.Join("DATA", "History")
+		_ = os.MkdirAll(historyDir, 0755)
+		history.StartHistoryViewerServer(cfg.WebPort, cfg.FiguresDir, historyDir)
+		return
+	}
 
 	enableWeb := cfg.EnableWeb || *webFlag
 	for _, arg := range os.Args[1:] {
 		if strings.EqualFold(arg, "-WEB") || strings.EqualFold(arg, "--WEB") {
 			enableWeb = true
+			break
+		}
+	}
+
+	enableHistory := *historyFlag
+	for _, arg := range os.Args[1:] {
+		if strings.EqualFold(arg, "-history") || strings.EqualFold(arg, "--history") {
+			enableHistory = true
 			break
 		}
 	}
@@ -91,6 +120,11 @@ func Run() {
 		web.StartWebServer(hub, cfg.WebPort, cfg.FiguresDir)
 	}
 
+	recorder := history.NewRecorder(enableHistory)
+	if enableHistory {
+		log.Printf("[History] Match recording enabled (saving to DATA/History/<date>/)")
+	}
+
 	log.Printf("ChessBot online (v%s by %s | Mode: %s | AutoPlay: %v | AutoXP: %v | AutoStart: %v)...",
 		config.Version, config.Author, cfg.GameType, cfg.AutoPlay, cfg.AutoClaimXP, cfg.AutoStartGame)
 
@@ -113,6 +147,7 @@ func Run() {
 	var lastOpponentWaitStart time.Time
 
 	resetMatchState := func() {
+		recorder.FinishMatch("")
 		lastStableBoard = [8][8]string{}
 		lastCalculatedBoard = [8][8]string{}
 		lastPlayedMove = engine.Move{}
@@ -140,7 +175,7 @@ func Run() {
 		if isPeopleMode && recognizer.IsMatchmakingScreen(frame) {
 			terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Searching for opponent...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
 			if enableWeb && hub != nil {
-				hub.Broadcast([8][8]string{}, 0, "-", "-", "Searching for opponent...", [2]int{-1, -1}, [2]int{-1, -1}, false)
+				hub.Broadcast([8][8]string{}, 0, "-", "-", "Searching for opponent...", [2]int{-1, -1}, [2]int{-1, -1}, false, false, false)
 			}
 			resetMatchState()
 			time.Sleep(700 * time.Millisecond)
@@ -202,7 +237,9 @@ func Run() {
 			continue
 		}
 
+		rawBoard = board.EnsureKingPresence(rawBoard, lastStableBoard, myTeam)
 		stableBoard := stabilizer.Filter(rawBoard)
+		stableBoard = board.EnsureKingPresence(stableBoard, lastStableBoard, myTeam)
 
 		state := 0
 		if board.IsBoardEqual(rawBoard, stableBoard) {
@@ -354,8 +391,23 @@ func Run() {
 
 		terminal.RenderTerminal(stableBoard, state, currentMove, myTeam, bestMoveStr, cfg.AutoPlay, isGameOver, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
 
+		isMyKingCheck := false
+		isOppKingCheck := false
+		if myTeam != "" {
+			isMyKingCheck = engine.IsKingInCheck(stableBoard, myTeam, myTeam)
+			oppTeam := "Black"
+			if myTeam == "Black" {
+				oppTeam = "White"
+			}
+			isOppKingCheck = engine.IsKingInCheck(stableBoard, oppTeam, myTeam)
+		}
+
 		if enableWeb && hub != nil {
-			hub.Broadcast(stableBoard, state, currentMove, myTeam, bestMoveStr, bestFrom, bestTo, isGameOver)
+			hub.Broadcast(stableBoard, state, currentMove, myTeam, bestMoveStr, bestFrom, bestTo, isGameOver, isMyKingCheck, isOppKingCheck)
+		}
+
+		if enableHistory {
+			recorder.RecordFrame(stableBoard, state, currentMove, myTeam, bestMoveStr, bestFrom, bestTo, isGameOver, bestMoveStr, cfg.GameType)
 		}
 
 		elapsed := time.Since(start)
