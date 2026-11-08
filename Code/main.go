@@ -187,17 +187,57 @@ func Run() {
 
 		if pieceCount < 4 && recognizer.IsLobbyScreen(frame) {
 			if cfg.AutoStartGame {
-				var targetX, targetY int
-				if isPeopleMode {
-					targetX = int(float64(w) * 0.73)
-					targetY = int(float64(h) * 0.31)
-					terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Joining online game...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+				if recognizer.IsNewLobbyScreen(frame) {
+					// Новый интерфейс лобби: 3 карточки (0: 3 мин, 1: 10 мин, 2: Боты/Oscar)
+					// и кнопка "ИГРАТЬ" на y = 0.391*h, x = 0.50*w.
+					targetCard := 1 // по умолчанию режим People (10 мин)
+					if isOscarMode {
+						targetCard = 2 // режим Боты / Oscar
+					}
+
+					currentSelected := recognizer.GetNewLobbyCardSelection(frame)
+					if currentSelected != targetCard {
+						// Нажимаем на нужную карточку
+						var cardXFrac float64
+						switch targetCard {
+						case 0:
+							cardXFrac = 0.20
+						case 1:
+							cardXFrac = 0.50
+						case 2:
+							cardXFrac = 0.80
+						}
+						cardX := int(float64(w) * cardXFrac)
+						cardY := int(float64(h) * 0.25)
+						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Selecting game mode card...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+						_ = recognizer.Tap(adbPath, cardX, cardY)
+						time.Sleep(600 * time.Millisecond)
+					}
+
+					// Нажимаем кнопку "ИГРАТЬ"
+					playX := int(float64(w) * 0.50)
+					playY := int(float64(h) * 0.391)
+					if isPeopleMode {
+						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Clicking Play (Online)...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+					} else {
+						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Clicking Play (Oscar)...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+					}
+					_ = recognizer.Tap(adbPath, playX, playY)
 				} else {
-					targetX = int(float64(w) * 0.27)
-					targetY = int(float64(h) * 0.31)
-					terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Starting game with Oscar...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+					// Старый интерфейс лобби: прямой тап по карточке режима
+					var targetX, targetY int
+					if isPeopleMode {
+						targetX = int(float64(w) * 0.73)
+						targetY = int(float64(h) * 0.31)
+						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Joining online game...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+					} else {
+						targetX = int(float64(w) * 0.27)
+						targetY = int(float64(h) * 0.31)
+						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Starting game with Oscar...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+					}
+					_ = recognizer.Tap(adbPath, targetX, targetY)
 				}
-				_ = recognizer.Tap(adbPath, targetX, targetY)
+
 				time.Sleep(1500 * time.Millisecond)
 				resetMatchState()
 				xpClaimed = false

@@ -9,7 +9,7 @@
   "enable_web": false,
 
   // Board vertical Y-ratio for Oscar bot matches
-  "y_ratio_oscar": 0.355,
+  "y_ratio_oscar": 0.35625,
 
   // Board vertical Y-ratio for real-player online matches
   "y_ratio_people": 0.336,
@@ -18,7 +18,7 @@
   "figures_dir": "./Figures",
 
   // Piece template matching error tolerance
-  "max_error_threshold": 650.0,
+  "max_error_threshold": 2500.0,
 
   // Consecutive identical frames needed to confirm a move
   "stability_threshold": 2,
@@ -33,5 +33,5 @@
   "auto_start_game": true,
 
   // Opponent mode: "People" (online) or "Oscar" (built-in bot)
-  "game_type": "People"
+  "game_type": "Oscar"
 }
