@@ -68,9 +68,6 @@ func InferInitialTurn(board [8][8]string, myTeam string, lastMovedTeam string) s
 		}
 
 		if whitePawnsMoved == 0 && blackPawnsMoved == 0 {
-			if board[7][1] != "wN" || board[7][6] != "wN" {
-				return "Black"
-			}
 			return "White"
 		}
 		if whitePawnsMoved > blackPawnsMoved {

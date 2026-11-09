@@ -328,10 +328,14 @@ func Run() {
 			}
 		}
 
-		if isOscarMode && state == 1 && currentMove != myTeam && myTeam != "" {
+		if state == 1 && currentMove != myTeam && myTeam != "" {
+			waitLimit := 2500 * time.Millisecond
+			if isPeopleMode {
+				waitLimit = 4000 * time.Millisecond
+			}
 			if lastOpponentWaitStart.IsZero() {
 				lastOpponentWaitStart = time.Now()
-			} else if time.Since(lastOpponentWaitStart) > 2500*time.Millisecond {
+			} else if time.Since(lastOpponentWaitStart) > waitLimit {
 				currentMove = myTeam
 				lastOpponentWaitStart = time.Time{}
 			}
