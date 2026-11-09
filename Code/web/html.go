@@ -250,7 +250,6 @@ const DuolingoBoardHTML = `<!DOCTYPE html>
       if (isMyKing && isMyCheckActive) inDanger = true;
       if (isOppKing && isOppCheckActive) inDanger = true;
 
-      // Fallback if team is not yet detected: if check active, highlight matching king
       if (!myIsWhite && !myIsBlack && (isMyCheckActive || isOppCheckActive)) {
         inDanger = true;
       }
@@ -290,7 +289,6 @@ const DuolingoBoardHTML = `<!DOCTYPE html>
 
     const nextPieces = [];
 
-    // Pass 1: Exact matches (same piece type at same square)
     for (const item of targetItems) {
       const idx = activePieces.findIndex(ap => !ap.matched && ap.type === item.type && ap.r === item.r && ap.c === item.c);
       if (idx !== -1) {
@@ -303,7 +301,6 @@ const DuolingoBoardHTML = `<!DOCTYPE html>
       }
     }
 
-    // Pass 2: Piece movements (same type moving to new square)
     for (const item of targetItems) {
       if (item.matched) continue;
       let bestIdx = -1;
@@ -332,7 +329,6 @@ const DuolingoBoardHTML = `<!DOCTYPE html>
       }
     }
 
-    // Pass 3: Brand new pieces (spawns / promotions)
     for (const item of targetItems) {
       if (item.matched) continue;
       const el = document.createElement('div');
@@ -358,7 +354,6 @@ const DuolingoBoardHTML = `<!DOCTYPE html>
       });
     }
 
-    // Pass 4: Pieces no longer matched on board
     const maxMissingThreshold = (currentState === 0) ? 35 : 18;
 
     for (const ap of activePieces) {

@@ -124,7 +124,7 @@ func Tap(adbPath string, x, y int) error {
 	return cmd.Run()
 }
 
-func ExecuteMove(adbPath string, screenW, screenH int, yRatio float64, m engine.Move) error {
+func ExecuteMove(adbPath string, screenW, screenH int, yRatio float64, m engine.Move, tapDelayMs ...int) error {
 	cellW := float64(screenW) / 8.0
 	cellH := cellW
 	startY := float64(screenH) * yRatio
@@ -137,10 +137,15 @@ func ExecuteMove(adbPath string, screenW, screenH int, yRatio float64, m engine.
 
 	isPromotion := len(m.Piece) >= 2 && m.Piece[1] == 'P' && (m.ToR == 0 || m.ToR == 7)
 
+	delay := 180 * time.Millisecond
+	if len(tapDelayMs) > 0 && tapDelayMs[0] > 0 {
+		delay = time.Duration(tapDelayMs[0]) * time.Millisecond
+	}
+
 	if err := Tap(adbPath, fromX, fromY); err != nil {
 		return err
 	}
-	time.Sleep(180 * time.Millisecond)
+	time.Sleep(delay)
 
 	if err := Tap(adbPath, toX, toY); err != nil {
 		return err

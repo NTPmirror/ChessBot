@@ -23,6 +23,12 @@ type Config struct {
 	AutoClaimXP        bool    `json:"auto_claim_xp"`
 	AutoStartGame      bool    `json:"auto_start_game"`
 	GameType           string  `json:"game_type"`
+
+	Humanize       bool `json:"humanize"`
+	MoveDelayMinMs int  `json:"move_delay_min_ms"`
+	MoveDelayMaxMs int  `json:"move_delay_max_ms"`
+	TapDelayMinMs  int  `json:"tap_delay_min_ms"`
+	TapDelayMaxMs  int  `json:"tap_delay_max_ms"`
 }
 
 func stripComments(data []byte) []byte {
@@ -103,6 +109,11 @@ func LoadConfig(path string) Config {
 		AutoClaimXP:        true,
 		AutoStartGame:      true,
 		GameType:           "People",
+		Humanize:           true,
+		MoveDelayMinMs:     400,
+		MoveDelayMaxMs:     1200,
+		TapDelayMinMs:      120,
+		TapDelayMaxMs:      260,
 	}
 
 	actualPath := path

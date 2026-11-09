@@ -267,7 +267,6 @@ const HistoryViewerHTML = `<!DOCTYPE html>
     uiMyTeam.textContent = frame.my_team || currentMatch.my_team || '-';
     uiBestMove.textContent = frame.best_move || frame.status_text || '-';
 
-    // Highlights
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
         const cell = document.getElementById('sq_' + r + '_' + c);
@@ -280,7 +279,6 @@ const HistoryViewerHTML = `<!DOCTYPE html>
       }
     }
 
-    // Pieces rendering with smooth transitions
     updatePieces(frame.board, isStepJump, Math.abs(currentIdx - prevIdx) > 1);
   }
 
@@ -305,7 +303,6 @@ const HistoryViewerHTML = `<!DOCTYPE html>
 
     const nextPieces = [];
 
-    // Pass 1: Exact matches (same piece type staying at same square)
     for (const item of targetItems) {
       const idx = activePieces.findIndex(ap => !ap.matched && ap.type === item.type && ap.r === item.r && ap.c === item.c);
       if (idx !== -1) {
@@ -317,7 +314,6 @@ const HistoryViewerHTML = `<!DOCTYPE html>
       }
     }
 
-    // Pass 2: Piece movements (same type moving to new square, prioritize shortest distance)
     for (const item of targetItems) {
       if (item.matched) continue;
       let bestIdx = -1;
@@ -345,7 +341,6 @@ const HistoryViewerHTML = `<!DOCTYPE html>
       }
     }
 
-    // Pass 3: Brand new pieces (spawns / promotions)
     for (const item of targetItems) {
       if (item.matched) continue;
       const el = document.createElement('div');
@@ -370,7 +365,6 @@ const HistoryViewerHTML = `<!DOCTYPE html>
       });
     }
 
-    // Pass 4: Pieces that were captured or removed
     for (const ap of activePieces) {
       if (!ap.matched) {
         if (ap.el && ap.el.parentNode) {
@@ -383,7 +377,6 @@ const HistoryViewerHTML = `<!DOCTYPE html>
     for (const ap of activePieces) ap.matched = false;
 
     if (isBigJump) {
-      // Re-enable transitions on next animation frame
       requestAnimationFrame(() => {
         piecesLayer.classList.remove('no-transition');
       });

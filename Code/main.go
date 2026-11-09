@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
@@ -185,7 +186,7 @@ func Run() {
 		rawBoard := recognizer.Process(frame, templates, activeYRatio, cfg.MaxErrorThreshold)
 		pieceCount := board.CountBoardPieces(rawBoard)
 
-		if pieceCount < 4 && recognizer.IsLobbyScreen(frame) {
+		if recognizer.IsLobbyScreen(frame) {
 			if cfg.AutoStartGame {
 				if recognizer.IsNewLobbyScreen(frame) {
 
@@ -261,8 +262,16 @@ func Run() {
 				continue
 			}
 
+			if recognizer.IsSuperAdScreen(frame) {
+				terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Skipping Super Duolingo ad (No thanks)...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+				_ = recognizer.Tap(adbPath, w/2, int(float64(h)*0.928))
+				time.Sleep(1500 * time.Millisecond)
+				resetMatchState()
+				continue
+			}
+
 			if btnType == "continue" {
-				if cfg.AutoStartGame || xpClaimed {
+				if cfg.AutoStartGame || cfg.AutoPlay || cfg.AutoClaimXP || xpClaimed {
 					terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Clicking Play / Continue...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
 					_ = recognizer.Tap(adbPath, btnX, btnY)
 					time.Sleep(1500 * time.Millisecond)
@@ -296,6 +305,10 @@ func Run() {
 		}
 
 		highlightWho, _, _ := recognizer.DetectLastMoveHighlight(frame, activeYRatio, stableBoard)
+		clockTurn := recognizer.DetectActiveClockTurn(frame)
+		if clockTurn != "" {
+			currentMove = clockTurn
+		}
 
 		if !board.IsBoardEqual(lastStableBoard, stableBoard) {
 			if detectedTeam := board.DetermineMyTeam(stableBoard); detectedTeam != "" {
@@ -355,9 +368,12 @@ func Run() {
 			bestFrom = [2]int{-1, -1}
 			bestTo = [2]int{-1, -1}
 			bestMoveStr = "Checkmate! Victory! Continuing..."
-			if cfg.AutoClaimXP {
+			if cfg.AutoClaimXP || cfg.AutoPlay || cfg.AutoStartGame {
 				_ = recognizer.Tap(adbPath, btnX, btnY)
 				time.Sleep(1500 * time.Millisecond)
+				resetMatchState()
+				xpClaimed = false
+				continue
 			}
 
 		} else if btnType == "claim_xp" {
@@ -422,7 +438,23 @@ func Run() {
 						lastBoardBeforeMove = stableBoard
 						lastPlayedMove = m
 
-						_ = recognizer.ExecuteMove(adbPath, w, h, activeYRatio, m)
+						tapDelay := 180
+						if cfg.Humanize {
+							minMove := cfg.MoveDelayMinMs
+							maxMove := cfg.MoveDelayMaxMs
+							if minMove <= 0 { minMove = 300 }
+							if maxMove < minMove { maxMove = minMove + 500 }
+							thinkingDelay := minMove + rand.Intn(maxMove-minMove+1)
+							time.Sleep(time.Duration(thinkingDelay) * time.Millisecond)
+
+							minTap := cfg.TapDelayMinMs
+							maxTap := cfg.TapDelayMaxMs
+							if minTap <= 0 { minTap = 120 }
+							if maxTap < minTap { maxTap = minTap + 100 }
+							tapDelay = minTap + rand.Intn(maxTap-minTap+1)
+						}
+
+						_ = recognizer.ExecuteMove(adbPath, w, h, activeYRatio, m, tapDelay)
 						time.Sleep(450 * time.Millisecond)
 					}
 				} else {
