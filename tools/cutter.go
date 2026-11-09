@@ -11,12 +11,12 @@ import (
 
 type PieceCoord struct {
 	Name string
-	Col  int // 0..7 (a..h)
-	Row  int // 0..7 (сверху вниз: 0 = 8-я горизонталь, 7 = 1-я)
+	Col  int
+	Row  int
 }
 
 func main() {
-	// Поддерживает и screen.png, и screen.jpg
+
 	filePath := "Figures/screen.png"
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -36,26 +36,26 @@ func main() {
 	w := src.Bounds().Dx()
 	h := src.Bounds().Dy()
 
-	// Начало доски сразу под диалоговым облачком персонажа
+
 	startY := int(float64(h) * 0.355)
 	cellW := w / 8
 	cellH := cellW
 
-	// Координаты всех 12 фигур, присутствующих на скриншоте
-	targets := []PieceCoord{
-		{"wR", 0, 0}, // a8 — белая ладья
-		{"wK", 3, 0}, // d8 — белый король
-		{"wN", 6, 0}, // g8 — белый конь
-		{"wP", 0, 1}, // a7 — белая пешка
-		{"wQ", 7, 3}, // h5 — белый ферзь
-		{"wB", 3, 4}, // d4 — белый слон
 
-		{"bP", 0, 6}, // a2 — черная пешка
-		{"bK", 3, 6}, // d2 — черный король
-		{"bR", 0, 7}, // a1 — черная ладья
-		{"bN", 1, 7}, // b1 — черный конь
-		{"bB", 2, 7}, // c1 — черный слон
-		{"bQ", 4, 7}, // e1 — черный ферзь
+	targets := []PieceCoord{
+		{"wR", 0, 0},
+		{"wK", 3, 0},
+		{"wN", 6, 0},
+		{"wP", 0, 1},
+		{"wQ", 7, 3},
+		{"wB", 3, 4},
+
+		{"bP", 0, 6},
+		{"bK", 3, 6},
+		{"bR", 0, 7},
+		{"bN", 1, 7},
+		{"bB", 2, 7},
+		{"bQ", 4, 7},
 	}
 
 	type subImager interface {

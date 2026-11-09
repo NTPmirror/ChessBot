@@ -20,11 +20,11 @@ func IsLobbyScreen(frame image.Image) bool {
 		return true
 	}
 
-	// Новый интерфейс лобби
+
 	return IsNewLobbyScreen(frame)
 }
 
-// IsNewLobbyScreen проверяет, открыт ли новый интерфейс лобби
+
 func IsNewLobbyScreen(frame image.Image) bool {
 	b := frame.Bounds()
 	w, h := b.Dx(), b.Dy()
@@ -33,13 +33,16 @@ func IsNewLobbyScreen(frame image.Image) bool {
 	tr, tg, tb, _ := cTop.RGBA()
 	tr8, tg8, tb8 := int(tr>>8), int(tg>>8), int(tb>>8)
 
-	// В новом интерфейсе фон шапки темный
+
 	if tr8 < 60 && tg8 < 60 && tb8 < 60 {
-		btnY := int(float64(h) * 0.391)
+
+		btnY := int(float64(h) * 0.375)
 		samplePoints := []int{
-			int(float64(w) * 0.30),
+			int(float64(w) * 0.20),
+			int(float64(w) * 0.35),
 			int(float64(w) * 0.50),
-			int(float64(w) * 0.70),
+			int(float64(w) * 0.65),
+			int(float64(w) * 0.80),
 		}
 		tealMatches := 0
 		for _, px := range samplePoints {
@@ -50,27 +53,29 @@ func IsNewLobbyScreen(frame image.Image) bool {
 				tealMatches++
 			}
 		}
-		return tealMatches >= 2
+		return tealMatches >= 3
 	}
 	return false
 }
 
-// GetNewLobbyCardSelection возвращает индекс выбранной карточки (0, 1 или 2), либо -1
+
 func GetNewLobbyCardSelection(frame image.Image) int {
 	b := frame.Bounds()
 	w, h := b.Dx(), b.Dy()
 
-	yTest := int(float64(h) * 0.163)
 	cardX := []float64{0.20, 0.50, 0.80}
 
 	for i, xFrac := range cardX {
 		px := int(float64(w) * xFrac)
-		c := frame.At(px, yTest)
-		red, grn, _, _ := c.RGBA()
-		r, g := int(red>>8), int(grn>>8)
-		// У выбранной карточки верхняя рамка подсвечена зеленым (r < 15, g > 45)
-		if r < 15 && g > 45 {
-			return i
+
+		for _, yFrac := range []float64{0.159, 0.161, 0.163} {
+			py := int(float64(h) * yFrac)
+			c := frame.At(px, py)
+			red, grn, _, _ := c.RGBA()
+			r, g := int(red>>8), int(grn>>8)
+			if g > 45 && g > r+25 {
+				return i
+			}
 		}
 	}
 	return -1
@@ -103,6 +108,34 @@ func DetectActionButton(frame image.Image) (string, int, int) {
 	b := frame.Bounds()
 	w, h := b.Dx(), b.Dy()
 
+
+	if !IsLobbyScreen(frame) {
+		yStart := int(float64(h) * 0.915)
+		yEnd := int(float64(h) * 0.938)
+		xStart := int(float64(w) * 0.35)
+		xEnd := int(float64(w) * 0.65)
+
+		brightCount := 0
+		totalSamples := 0
+		for y := yStart; y <= yEnd; y += 4 {
+			for x := xStart; x <= xEnd; x += 8 {
+				c := frame.At(x, y)
+				r, g, bl, _ := c.RGBA()
+				lum := (int(r>>8)*299 + int(g>>8)*587 + int(bl>>8)*114) / 1000
+				if lum > 140 {
+					brightCount++
+				}
+				totalSamples++
+			}
+		}
+
+		if totalSamples > 0 && float64(brightCount)/float64(totalSamples) > 0.14 {
+			targetX := w / 2
+			targetY := int(float64(h) * 0.926)
+			return "continue", targetX, targetY
+		}
+	}
+
 	sampleX := int(float64(w) * 0.25)
 	minY := int(float64(h) * 0.60)
 	maxY := int(float64(h) * 0.96)
@@ -124,16 +157,16 @@ func DetectActionButton(frame image.Image) (string, int, int) {
 
 		currentType := ""
 		if g8 > 155 && g8 > r8+35 && b8 < 100 {
-			// Зеленая кнопка "Продолжить" (старый UI)
+
 			currentType = "continue"
 		} else if b8 > 180 && g8 > 120 && r8 < 100 && (b8 > r8+70) {
-			// Синяя кнопка "Забрать XP" (старый UI)
+
 			currentType = "claim_xp"
 		} else if r8 > 230 && g8 > 230 && b8 > 230 {
-			// Белая кнопка "Продолжить" (новый UI, экран завершения/опыта)
+
 			currentType = "continue"
 		} else if g8 > 140 && b8 > 90 && g8 > r8+60 && r8 < 80 {
-			// Бирюзовая кнопка действия (новый UI)
+
 			currentType = "continue"
 		} else if r8 > 190 && g8 > 140 && b8 < 75 && (r8-b8 > 120) {
 			currentType = "undo"
@@ -175,6 +208,21 @@ func DetectActionButton(frame image.Image) (string, int, int) {
 	if bestSpan != nil {
 		targetX := w / 2
 		targetY := (bestSpan.startY + bestSpan.endY) / 2
+
+
+		if targetY > int(float64(h)*0.88) {
+			cLeft := frame.At(int(float64(w)*0.30), targetY)
+			cRight := frame.At(int(float64(w)*0.70), targetY)
+			lr, lg, lb, _ := cLeft.RGBA()
+			rr, rg, rb, _ := cRight.RGBA()
+			lLum := (int(lr>>8) + int(lg>>8) + int(lb>>8)) / 3
+			rLum := (int(rr>>8) + int(rg>>8) + int(rb>>8)) / 3
+
+			if lLum < 120 || rLum < 120 {
+				return "", 0, 0
+			}
+		}
+
 		return bestSpan.btnType, targetX, targetY
 	}
 
@@ -182,16 +230,15 @@ func DetectActionButton(frame image.Image) (string, int, int) {
 }
 
 func GetPromotionQueenTap(screenW, screenH int, yRatio float64, toR, toC int) (int, int) {
-	// В Duolingo диалог превращения пешки ("ПРЕВРАЩЕНИЕ ПЕШКИ") центрируется относительно колонки превращения (toC),
-	// либо фиксированно расположен по центру, если колонка неизвестна.
-	// Ферзь всегда является первой фигурой слева в ряду выбора (Ферзь, Ладья, Слон, Конь).
+
+
 	queenY := int(float64(screenH) * 0.494)
 
 	if toC >= 0 && toC < 8 {
 		cellW := float64(screenW) / 8.0
 		colCenterX := (float64(toC) + 0.5) * cellW
 
-		// Диалог шириной ~54% экрана не выходит за границы экрана
+
 		minCenter := float64(screenW) * 0.28
 		maxCenter := float64(screenW) * 0.72
 		dialogCenter := colCenterX
@@ -201,7 +248,7 @@ func GetPromotionQueenTap(screenW, screenH int, yRatio float64, toR, toC int) (i
 			dialogCenter = maxCenter
 		}
 
-		// Ферзь смещен на ~17% экрана левее центра диалога
+
 		queenX := int(dialogCenter - float64(screenW)*0.17)
 		if queenX < int(float64(screenW)*0.08) {
 			queenX = int(float64(screenW) * 0.08)
@@ -209,7 +256,7 @@ func GetPromotionQueenTap(screenW, screenH int, yRatio float64, toR, toC int) (i
 		return queenX, queenY
 	}
 
-	// По умолчанию (если колонка не определена)
+
 	queenX := int(float64(screenW) * 0.35)
 	return queenX, queenY
 }

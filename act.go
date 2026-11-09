@@ -144,7 +144,7 @@ func extractFileFromZip(zipPath, entrySuffix, dstPath string) error {
 
 func ensureADB(targetOS, outDir string) error {
 	if targetOS == "android" {
-		// On Android (Termux + root), adb is not needed (screencap and input run natively via su)
+
 		return nil
 	}
 
@@ -245,7 +245,7 @@ func buildTarget(targetOS string) {
 		return
 	}
 
-	// 1. Prepare ADB
+
 	if targetOS != "android" {
 		fmt.Println("  [1/4] Preparing platform ADB binary...")
 		if err := ensureADB(targetOS, outDir); err != nil {
@@ -255,7 +255,7 @@ func buildTarget(targetOS string) {
 		fmt.Println("  [1/4] Android root mode: direct screencap & input via su (no external ADB needed)")
 	}
 
-	// 2. Prepare embedded figures & assets
+
 	cleanup := prepareEmbedded(targetOS)
 	defer cleanup()
 
@@ -271,14 +271,14 @@ func buildTarget(targetOS string) {
 		return
 	}
 
-	// 3. Write sample config
+
 	fmt.Println("  [3/4] Writing sample config.jsonc...")
 	cfgDst := filepath.Join(outDir, "config.jsonc")
 	if data, err := os.ReadFile("config.jsonc"); err == nil {
 		_ = os.WriteFile(cfgDst, data, 0644)
 	}
 
-	// 4. Create convenient start script for Termux
+
 	if targetOS == "android" {
 		startSh := filepath.Join(outDir, "start.sh")
 		scriptContent := "#!/data/data/com.termux/files/usr/bin/sh\nchmod +x chessbot-android\nsu -c ./chessbot-android \"$@\"\n"

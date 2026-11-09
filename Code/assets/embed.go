@@ -9,7 +9,7 @@ import (
 	"runtime"
 )
 
-//go:embed embedded/*
+
 var EmbeddedFS embed.FS
 
 func ExtractEmbeddedADB() (string, error) {

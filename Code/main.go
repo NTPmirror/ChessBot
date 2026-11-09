@@ -188,16 +188,16 @@ func Run() {
 		if pieceCount < 4 && recognizer.IsLobbyScreen(frame) {
 			if cfg.AutoStartGame {
 				if recognizer.IsNewLobbyScreen(frame) {
-					// Новый интерфейс лобби: 3 карточки (0: 3 мин, 1: 10 мин, 2: Боты/Oscar)
-					// и кнопка "ИГРАТЬ" на y = 0.391*h, x = 0.50*w.
-					targetCard := 1 // по умолчанию режим People (10 мин)
+
+
+					targetCard := 2
 					if isOscarMode {
-						targetCard = 2 // режим Боты / Oscar
+						targetCard = 0
 					}
 
 					currentSelected := recognizer.GetNewLobbyCardSelection(frame)
 					if currentSelected != targetCard {
-						// Нажимаем на нужную карточку
+
 						var cardXFrac float64
 						switch targetCard {
 						case 0:
@@ -214,7 +214,7 @@ func Run() {
 						time.Sleep(600 * time.Millisecond)
 					}
 
-					// Нажимаем кнопку "ИГРАТЬ"
+
 					playX := int(float64(w) * 0.50)
 					playY := int(float64(h) * 0.391)
 					if isPeopleMode {
@@ -224,7 +224,7 @@ func Run() {
 					}
 					_ = recognizer.Tap(adbPath, playX, playY)
 				} else {
-					// Старый интерфейс лобби: прямой тап по карточке режима
+
 					var targetX, targetY int
 					if isPeopleMode {
 						targetX = int(float64(w) * 0.73)
@@ -252,6 +252,15 @@ func Run() {
 		btnType, btnX, btnY := recognizer.DetectActionButton(frame)
 
 		if pieceCount < 4 {
+
+			if cfg.AutoClaimXP && recognizer.IsChestScreen(frame) {
+				chestX, chestY := recognizer.GetChestTapCoordinates(w, h)
+				terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Opening reward chest...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+				_ = recognizer.Tap(adbPath, chestX, chestY)
+				time.Sleep(1500 * time.Millisecond)
+				continue
+			}
+
 			if btnType == "continue" {
 				if cfg.AutoStartGame || xpClaimed {
 					terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Clicking Play / Continue...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)

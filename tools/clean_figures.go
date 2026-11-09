@@ -11,13 +11,13 @@ import (
 	"strings"
 )
 
-// Flood fill or corner sampling to remove background from piece crops
+
 func removeBackground(src image.Image) *image.NRGBA {
 	b := src.Bounds()
 	w, h := b.Dx(), b.Dy()
 	out := image.NewNRGBA(image.Rect(0, 0, w, h))
 
-	// Find background color from corners
+
 	corners := []color.Color{
 		src.At(b.Min.X, b.Min.Y),
 		src.At(b.Max.X-1, b.Min.Y),
@@ -40,8 +40,7 @@ func removeBackground(src image.Image) *image.NRGBA {
 	bgG := sumG / float64(len(corners))
 	bgB := sumB / float64(len(corners))
 
-	// Breadth-first flood fill from edges to only remove the external background,
-	// preserving any inside parts of pieces that might resemble the board color
+
 	visited := make([][]bool, h)
 	for y := range visited {
 		visited[y] = make([]bool, w)
@@ -53,13 +52,12 @@ func removeBackground(src image.Image) *image.NRGBA {
 		db := float64(b) - bgB
 		dist := math.Sqrt(dr*dr + dg*dg + db*db)
 
-		// Check if it's the board cell color (dark #17242a or light #273941 or similar)
-		// Or within distance of corners
+
 		if dist < 22.0 {
 			return true
 		}
-		// Also check standard board cell tones
-		// dark: ~ (23, 36, 42), light: ~ (39, 57, 65)
+
+
 		dDark := math.Sqrt(math.Pow(float64(r)-23, 2) + math.Pow(float64(g)-36, 2) + math.Pow(float64(b)-42, 2))
 		dLight := math.Sqrt(math.Pow(float64(r)-39, 2) + math.Pow(float64(g)-57, 2) + math.Pow(float64(b)-65, 2))
 		return dDark < 16.0 || dLight < 16.0
@@ -68,7 +66,7 @@ func removeBackground(src image.Image) *image.NRGBA {
 	type pt struct{ x, y int }
 	var queue []pt
 
-	// Initialize queue with border pixels
+
 	for x := 0; x < w; x++ {
 		queue = append(queue, pt{x, 0}, pt{x, h - 1})
 		visited[0][x] = true
@@ -97,7 +95,7 @@ func removeBackground(src image.Image) *image.NRGBA {
 		if isBgColor(r8, g8, b8) {
 			isBgPixel[p.y][p.x] = true
 
-			// Neighbors
+
 			dxs := []int{-1, 1, 0, 0}
 			dys := []int{0, 0, -1, 1}
 			for i := 0; i < 4; i++ {
@@ -110,7 +108,7 @@ func removeBackground(src image.Image) *image.NRGBA {
 		}
 	}
 
-	// Copy to out with transparency
+
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 			if isBgPixel[y][x] {

@@ -41,7 +41,7 @@ func StartWebServer(hub *WSHub, port int, figuresDir string) {
 
 	http.Handle("/figures/", cacheControlMiddleware(http.StripPrefix("/figures/", fileHandler)))
 
-	// Serve static assets (CSS, etc.) from embedded staticFS or local folder
+
 	staticSubFS, err := fs.Sub(staticFS, "static")
 	if err == nil {
 		http.Handle("/static/", cacheControlMiddleware(http.StripPrefix("/static/", http.FileServer(http.FS(staticSubFS)))))

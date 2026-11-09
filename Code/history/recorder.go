@@ -153,7 +153,7 @@ func (r *Recorder) RecordFrame(b [8][8]string, state int, move, myTeam, bestMove
 	stateChanged := r.lastState != state
 	moveChanged := r.lastMove != move
 
-	// Don't record duplicate consecutive idle frames unless game over or significant change
+
 	if !boardChanged && !stateChanged && !moveChanged && !isGameOver && len(r.currentMatch.Frames) > 0 {
 		return
 	}

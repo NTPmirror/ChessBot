@@ -94,7 +94,7 @@ func ListHistory(baseDir string) []DateGroup {
 				})
 			}
 		} else if strings.HasSuffix(name, ".json") {
-			// Also support match files saved directly under baseDir
+
 			data, err := os.ReadFile(fullEntryPath)
 			if err != nil {
 				continue
@@ -111,7 +111,7 @@ func ListHistory(baseDir string) []DateGroup {
 			if date == "" {
 				date = "Matches"
 			}
-			// Find existing group for date or create
+
 			found := false
 			for idx := range groups {
 				if groups[idx].Date == date {

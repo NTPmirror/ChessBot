@@ -71,8 +71,7 @@ func FindPendingPromotion(board [8][8]string, myTeam string) (int, int, bool) {
 	return -1, -1, false
 }
 
-// EnsureKingPresence гарантирует, что король своей команды не исчезнет из-за сбоев распознавания.
-// Если на текущей доске король не найден, он восстанавливается с последней известной позиции.
+
 func EnsureKingPresence(b [8][8]string, lastB [8][8]string, team string) [8][8]string {
 	if team == "" {
 		return b

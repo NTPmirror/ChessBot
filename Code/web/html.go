@@ -390,7 +390,7 @@ const DuolingoBoardHTML = `<!DOCTYPE html>
         if (!cell) continue;
         const isFrom = (from && from[0] === r && from[1] === c && (from[0] !== -1 || from[1] !== -1));
         const isTo = (to && to[0] === r && to[1] === c && (to[0] !== -1 || to[1] !== -1));
-        
+
         if (isFrom) {
           if (!cell.classList.contains('highlight-from')) cell.classList.add('highlight-from');
         } else {
