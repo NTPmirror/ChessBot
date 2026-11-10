@@ -16,9 +16,9 @@ type Coord struct {
 }
 
 func main() {
-	file, err := os.Open("Figures/screen_game.png")
+	file, err := os.Open("Figures/Duolingo/screen_game.png")
 	if err != nil {
-		log.Fatal("Нет Figures/screen_game.png")
+		log.Fatal("Нет Figures/Duolingo/screen_game.png")
 	}
 	defer file.Close()
 
@@ -74,7 +74,7 @@ func main() {
 		)
 		crop := impl.SubImage(rect)
 
-		out, err := os.Create(fmt.Sprintf("Figures/%s.png", t.Name))
+		out, err := os.Create(fmt.Sprintf("Figures/Duolingo/%s.png", t.Name))
 		if err != nil {
 			log.Printf("не создать %s: %v", t.Name, err)
 			continue

@@ -254,6 +254,8 @@ func StartHistoryViewerServer(port int, figuresDir, historyDir string) {
 	webFiguresDir := filepath.Join(figuresDir, "WEB")
 	if fi, err := os.Stat(webFiguresDir); err == nil && fi.IsDir() {
 		fileHandler = http.FileServer(http.Dir(webFiguresDir))
+	} else if figFS, err := fs.Sub(assets.EmbeddedFS, "embedded/Figures/Duolingo/WEB"); err == nil {
+		fileHandler = http.FileServer(http.FS(figFS))
 	} else if figFS, err := fs.Sub(assets.EmbeddedFS, "embedded/Figures/WEB"); err == nil {
 		fileHandler = http.FileServer(http.FS(figFS))
 	} else if figFS, err := assets.GetFiguresFS(); err == nil {

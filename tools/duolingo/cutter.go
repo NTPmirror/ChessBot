@@ -17,13 +17,13 @@ type PieceCoord struct {
 
 func main() {
 
-	filePath := "Figures/screen.png"
+	filePath := "Figures/Duolingo/screen.png"
 	file, err := os.Open(filePath)
 	if err != nil {
-		filePath = "Figures/screen.jpg"
+		filePath = "Figures/Duolingo/screen.jpg"
 		file, err = os.Open(filePath)
 		if err != nil {
-			log.Fatalf("Не найден файл скриншота в Figures/ (screen.png или screen.jpg)")
+			log.Fatalf("Не найден файл скриншота в Figures/Duolingo/ (screen.png или screen.jpg)")
 		}
 	}
 	defer file.Close()
@@ -76,7 +76,7 @@ func main() {
 		)
 
 		crop := si.SubImage(rect)
-		outPath := fmt.Sprintf("Figures/%s.png", t.Name)
+		outPath := fmt.Sprintf("Figures/Duolingo/%s.png", t.Name)
 		outF, err := os.Create(outPath)
 		if err != nil {
 			log.Printf("Ошибка создания %s: %v", outPath, err)
@@ -91,5 +91,5 @@ func main() {
 		outF.Close()
 	}
 
-	fmt.Println("Готово! Все шаблоны сформированы в папке Figures.")
+	fmt.Println("Готово! Все шаблоны сформированы в папке Figures/Duolingo.")
 }

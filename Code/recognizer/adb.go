@@ -153,8 +153,24 @@ func ExecuteMove(adbPath string, screenW, screenH int, yRatio float64, m engine.
 
 	if isPromotion {
 		time.Sleep(550 * time.Millisecond)
-		qX, qY := GetPromotionQueenTap(screenW, screenH, yRatio, m.ToR, m.ToC)
-		_ = Tap(adbPath, qX, qY)
+		// Default queen promotion tap in standard dialog
+		queenY := int(float64(screenH) * 0.494)
+		queenX := toX
+		if m.ToC >= 0 && m.ToC < 8 {
+			dialogCenter := float64(toX)
+			minCenter := float64(screenW) * 0.28
+			maxCenter := float64(screenW) * 0.72
+			if dialogCenter < minCenter {
+				dialogCenter = minCenter
+			} else if dialogCenter > maxCenter {
+				dialogCenter = maxCenter
+			}
+			queenX = int(dialogCenter - float64(screenW)*0.17)
+			if queenX < int(float64(screenW)*0.08) {
+				queenX = int(float64(screenW) * 0.08)
+			}
+		}
+		_ = Tap(adbPath, queenX, queenY)
 		time.Sleep(450 * time.Millisecond)
 	}
 

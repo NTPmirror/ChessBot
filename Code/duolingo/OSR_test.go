@@ -1,4 +1,4 @@
-package recognizer_test
+package duolingo_test
 
 import (
 	"fmt"
@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"chessbot/Code/board"
+	"chessbot/Code/duolingo"
 	"chessbot/Code/recognizer"
 )
 
@@ -90,21 +91,21 @@ func TestSampleScreensRecognition(t *testing.T) {
 
 			img := loadTestImage(t, p)
 
-			if !recognizer.IsLobbyScreen(img) {
+			if !duolingo.IsLobbyScreen(img) {
 				t.Errorf("[%s] Expected IsLobbyScreen to be true", tc.filename)
 			}
-			if !recognizer.IsNewLobbyScreen(img) {
+			if !duolingo.IsNewLobbyScreen(img) {
 				t.Errorf("[%s] Expected IsNewLobbyScreen to be true", tc.filename)
 			}
 
-			card := recognizer.GetNewLobbyCardSelection(img)
+			card := duolingo.GetNewLobbyCardSelection(img)
 			if card != tc.expectedCard {
 				t.Errorf("[%s] Card selection = %d, expected %d", tc.filename, card, tc.expectedCard)
 			} else {
 				t.Logf("[%s] OK: Correctly detected card %d", tc.filename, card)
 			}
 
-			btnType, _, _ := recognizer.DetectActionButton(img)
+			btnType, _, _ := duolingo.DetectActionButton(img)
 			if btnType != "" {
 				t.Errorf("[%s] Expected no action button on lobby screen, got '%s'", tc.filename, btnType)
 			}
@@ -119,7 +120,7 @@ func TestSampleScreensRecognition(t *testing.T) {
 
 		img := loadTestImage(t, p)
 
-		if recognizer.IsLobbyScreen(img) {
+		if duolingo.IsLobbyScreen(img) {
 			t.Errorf("photo_2026-11-08_15-45-55.jpg should not be detected as LobbyScreen")
 		}
 
@@ -154,7 +155,7 @@ func TestSampleScreensRecognition(t *testing.T) {
 			}
 
 			img := loadTestImage(t, p)
-			btnType, x, y := recognizer.DetectActionButton(img)
+			btnType, x, y := duolingo.DetectActionButton(img)
 			if btnType != tc.expectedBtn {
 				t.Errorf("[%s] Expected action button '%s', got '%s'", tc.filename, tc.expectedBtn, btnType)
 			} else {
@@ -170,7 +171,7 @@ func TestSampleScreensRecognition(t *testing.T) {
 		}
 
 		img := loadTestImage(t, p)
-		if !recognizer.IsChestScreen(img) {
+		if !duolingo.IsChestScreen(img) {
 			t.Errorf("Expected IsChestScreen to be true for chest_mega.jpg")
 		} else {
 			t.Logf("chest_mega.jpg correctly detected as ChestScreen")

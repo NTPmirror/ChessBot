@@ -12,6 +12,7 @@ import (
 
 	"chessbot/Code/board"
 	"chessbot/Code/config"
+	"chessbot/Code/duolingo"
 	"chessbot/Code/engine"
 	"chessbot/Code/history"
 	"chessbot/Code/recognizer"
@@ -68,7 +69,7 @@ func Run() {
 	if enableViewHistory {
 		historyDir := filepath.Join("DATA", "History")
 		_ = os.MkdirAll(historyDir, 0755)
-		history.StartHistoryViewerServer(cfg.WebPort, cfg.FiguresDir, historyDir)
+		history.StartHistoryViewerServer(cfg.WebPort, cfg.Duolingo.FiguresDir, historyDir)
 		return
 	}
 
@@ -88,18 +89,18 @@ func Run() {
 		}
 	}
 
-	activeYRatio := cfg.YRatio
-	isPeopleMode := strings.EqualFold(cfg.GameType, "People")
-	isOscarMode := strings.EqualFold(cfg.GameType, "Oscar")
+	activeYRatio := cfg.Duolingo.YRatio
+	isPeopleMode := strings.EqualFold(cfg.Duolingo.GameType, "People")
+	isOscarMode := strings.EqualFold(cfg.Duolingo.GameType, "Oscar")
 	if isPeopleMode {
-		if cfg.YRatioPeople > 0 {
-			activeYRatio = cfg.YRatioPeople
+		if cfg.Duolingo.YRatioPeople > 0 {
+			activeYRatio = cfg.Duolingo.YRatioPeople
 		} else {
 			activeYRatio = 0.336
 		}
 	} else {
-		if cfg.YRatioOscar > 0 {
-			activeYRatio = cfg.YRatioOscar
+		if cfg.Duolingo.YRatioOscar > 0 {
+			activeYRatio = cfg.Duolingo.YRatioOscar
 		} else {
 			activeYRatio = 0.355
 		}
@@ -108,7 +109,7 @@ func Run() {
 	adbPath := recognizer.FindADBPath()
 	log.Printf("ADB binary ready: %s", adbPath)
 
-	templates, err := recognizer.LoadTemplates(cfg.FiguresDir)
+	templates, err := recognizer.LoadTemplates(cfg.Duolingo.FiguresDir)
 	if err != nil {
 		log.Fatalf("Template load error: %v", err)
 	}
@@ -118,7 +119,7 @@ func Run() {
 	var hub *web.WSHub
 	if enableWeb {
 		hub = web.NewHub()
-		web.StartWebServer(hub, cfg.WebPort, cfg.FiguresDir)
+		web.StartWebServer(hub, cfg.WebPort, cfg.Duolingo.FiguresDir)
 	}
 
 	recorder := history.NewRecorder(enableHistory)
@@ -127,7 +128,7 @@ func Run() {
 	}
 
 	log.Printf("ChessBot online (v%s by %s | Mode: %s | AutoPlay: %v | AutoXP: %v | AutoStart: %v)...",
-		config.Version, config.Author, cfg.GameType, cfg.AutoPlay, cfg.AutoClaimXP, cfg.AutoStartGame)
+		config.Version, config.Author, cfg.Duolingo.GameType, cfg.AutoPlay, cfg.Duolingo.AutoClaimXP, cfg.Duolingo.AutoStartGame)
 
 	sleepDuration := time.Duration(cfg.IntervalMs) * time.Millisecond
 
@@ -173,8 +174,8 @@ func Run() {
 		w := frame.Bounds().Dx()
 		h := frame.Bounds().Dy()
 
-		if isPeopleMode && recognizer.IsMatchmakingScreen(frame) {
-			terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Searching for opponent...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+		if isPeopleMode && duolingo.IsMatchmakingScreen(frame) {
+			terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Searching for opponent...", cfg.AutoPlay, false, cfg.Duolingo.AutoClaimXP, cfg.Duolingo.AutoStartGame, cfg.Duolingo.GameType)
 			if enableWeb && hub != nil {
 				hub.Broadcast([8][8]string{}, 0, "-", "-", "Searching for opponent...", [2]int{-1, -1}, [2]int{-1, -1}, false, false, false)
 			}
@@ -186,19 +187,17 @@ func Run() {
 		rawBoard := recognizer.Process(frame, templates, activeYRatio, cfg.MaxErrorThreshold)
 		pieceCount := board.CountBoardPieces(rawBoard)
 
-		if recognizer.IsLobbyScreen(frame) {
-			if cfg.AutoStartGame {
-				if recognizer.IsNewLobbyScreen(frame) {
-
-
+		if duolingo.IsLobbyScreen(frame) {
+			if cfg.Duolingo.AutoStartGame {
+				if duolingo.IsNewLobbyScreen(frame) {
+					// Card 0: Oscar, Card 1: Lily, Card 2: People (Play)
 					targetCard := 2
 					if isOscarMode {
 						targetCard = 0
 					}
 
-					currentSelected := recognizer.GetNewLobbyCardSelection(frame)
+					currentSelected := duolingo.GetNewLobbyCardSelection(frame)
 					if currentSelected != targetCard {
-
 						var cardXFrac float64
 						switch targetCard {
 						case 0:
@@ -210,31 +209,29 @@ func Run() {
 						}
 						cardX := int(float64(w) * cardXFrac)
 						cardY := int(float64(h) * 0.25)
-						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Selecting game mode card...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Selecting game mode card...", cfg.AutoPlay, false, cfg.Duolingo.AutoClaimXP, cfg.Duolingo.AutoStartGame, cfg.Duolingo.GameType)
 						_ = recognizer.Tap(adbPath, cardX, cardY)
 						time.Sleep(600 * time.Millisecond)
 					}
 
-
 					playX := int(float64(w) * 0.50)
 					playY := int(float64(h) * 0.391)
 					if isPeopleMode {
-						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Clicking Play (Online)...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Clicking Play (Online)...", cfg.AutoPlay, false, cfg.Duolingo.AutoClaimXP, cfg.Duolingo.AutoStartGame, cfg.Duolingo.GameType)
 					} else {
-						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Clicking Play (Oscar)...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Clicking Play (Oscar)...", cfg.AutoPlay, false, cfg.Duolingo.AutoClaimXP, cfg.Duolingo.AutoStartGame, cfg.Duolingo.GameType)
 					}
 					_ = recognizer.Tap(adbPath, playX, playY)
 				} else {
-
 					var targetX, targetY int
 					if isPeopleMode {
 						targetX = int(float64(w) * 0.73)
 						targetY = int(float64(h) * 0.31)
-						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Joining online game...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Joining online game...", cfg.AutoPlay, false, cfg.Duolingo.AutoClaimXP, cfg.Duolingo.AutoStartGame, cfg.Duolingo.GameType)
 					} else {
 						targetX = int(float64(w) * 0.27)
 						targetY = int(float64(h) * 0.31)
-						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Starting game with Oscar...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: Starting game with Oscar...", cfg.AutoPlay, false, cfg.Duolingo.AutoClaimXP, cfg.Duolingo.AutoStartGame, cfg.Duolingo.GameType)
 					}
 					_ = recognizer.Tap(adbPath, targetX, targetY)
 				}
@@ -244,26 +241,25 @@ func Run() {
 				xpClaimed = false
 				continue
 			} else {
-				terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: AutoStart is off", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+				terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Lobby: AutoStart is off", cfg.AutoPlay, false, cfg.Duolingo.AutoClaimXP, cfg.Duolingo.AutoStartGame, cfg.Duolingo.GameType)
 				time.Sleep(500 * time.Millisecond)
 				continue
 			}
 		}
 
-		btnType, btnX, btnY := recognizer.DetectActionButton(frame)
+		btnType, btnX, btnY := duolingo.DetectActionButton(frame)
 
 		if pieceCount < 4 {
-
-			if cfg.AutoClaimXP && recognizer.IsChestScreen(frame) {
-				chestX, chestY := recognizer.GetChestTapCoordinates(w, h)
-				terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Opening reward chest...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+			if cfg.Duolingo.AutoClaimXP && duolingo.IsChestScreen(frame) {
+				chestX, chestY := duolingo.GetChestTapCoordinates(w, h)
+				terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Opening reward chest...", cfg.AutoPlay, false, cfg.Duolingo.AutoClaimXP, cfg.Duolingo.AutoStartGame, cfg.Duolingo.GameType)
 				_ = recognizer.Tap(adbPath, chestX, chestY)
 				time.Sleep(1500 * time.Millisecond)
 				continue
 			}
 
-			if recognizer.IsSuperAdScreen(frame) {
-				terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Skipping Super Duolingo ad (No thanks)...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+			if duolingo.IsSuperAdScreen(frame) {
+				terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Skipping Super Duolingo ad (No thanks)...", cfg.AutoPlay, false, cfg.Duolingo.AutoClaimXP, cfg.Duolingo.AutoStartGame, cfg.Duolingo.GameType)
 				_ = recognizer.Tap(adbPath, w/2, int(float64(h)*0.928))
 				time.Sleep(1500 * time.Millisecond)
 				resetMatchState()
@@ -271,8 +267,8 @@ func Run() {
 			}
 
 			if btnType == "continue" {
-				if cfg.AutoStartGame || cfg.AutoPlay || cfg.AutoClaimXP || xpClaimed {
-					terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Clicking Play / Continue...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+				if cfg.Duolingo.AutoStartGame || cfg.AutoPlay || cfg.Duolingo.AutoClaimXP || xpClaimed {
+					terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Clicking Play / Continue...", cfg.AutoPlay, false, cfg.Duolingo.AutoClaimXP, cfg.Duolingo.AutoStartGame, cfg.Duolingo.GameType)
 					_ = recognizer.Tap(adbPath, btnX, btnY)
 					time.Sleep(1500 * time.Millisecond)
 					resetMatchState()
@@ -280,8 +276,8 @@ func Run() {
 					continue
 				}
 			} else if btnType == "claim_xp" {
-				if cfg.AutoClaimXP {
-					terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Claiming XP reward...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+				if cfg.Duolingo.AutoClaimXP {
+					terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Claiming XP reward...", cfg.AutoPlay, false, cfg.Duolingo.AutoClaimXP, cfg.Duolingo.AutoStartGame, cfg.Duolingo.GameType)
 					_ = recognizer.Tap(adbPath, btnX, btnY)
 					time.Sleep(1800 * time.Millisecond)
 					resetMatchState()
@@ -290,7 +286,7 @@ func Run() {
 				}
 			}
 
-			terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Waiting for board to load...", cfg.AutoPlay, false, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+			terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Waiting for board to load...", cfg.AutoPlay, false, cfg.Duolingo.AutoClaimXP, cfg.Duolingo.AutoStartGame, cfg.Duolingo.GameType)
 			time.Sleep(300 * time.Millisecond)
 			continue
 		}
@@ -305,7 +301,7 @@ func Run() {
 		}
 
 		highlightWho, _, _ := recognizer.DetectLastMoveHighlight(frame, activeYRatio, stableBoard)
-		clockTurn := recognizer.DetectActiveClockTurn(frame)
+		clockTurn := duolingo.DetectActiveClockTurn(frame)
 		if clockTurn != "" {
 			currentMove = clockTurn
 		}
@@ -368,7 +364,7 @@ func Run() {
 			bestFrom = [2]int{-1, -1}
 			bestTo = [2]int{-1, -1}
 			bestMoveStr = "Checkmate! Victory! Continuing..."
-			if cfg.AutoClaimXP || cfg.AutoPlay || cfg.AutoStartGame {
+			if cfg.Duolingo.AutoClaimXP || cfg.AutoPlay || cfg.Duolingo.AutoStartGame {
 				_ = recognizer.Tap(adbPath, btnX, btnY)
 				time.Sleep(1500 * time.Millisecond)
 				resetMatchState()
@@ -382,7 +378,7 @@ func Run() {
 			bestFrom = [2]int{-1, -1}
 			bestTo = [2]int{-1, -1}
 
-			if cfg.AutoClaimXP {
+			if cfg.Duolingo.AutoClaimXP {
 				_ = recognizer.Tap(adbPath, btnX, btnY)
 				time.Sleep(1800 * time.Millisecond)
 				resetMatchState()
@@ -420,7 +416,7 @@ func Run() {
 			bestTo = [2]int{promR, promC}
 
 			if cfg.AutoPlay {
-				qX, qY := recognizer.GetPromotionQueenTap(w, h, activeYRatio, promR, promC)
+				qX, qY := duolingo.GetPromotionQueenTap(w, h, activeYRatio, promR, promC)
 				_ = recognizer.Tap(adbPath, qX, qY)
 				time.Sleep(600 * time.Millisecond)
 			}
@@ -474,7 +470,7 @@ func Run() {
 			bestTo = [2]int{-1, -1}
 		}
 
-		terminal.RenderTerminal(stableBoard, state, currentMove, myTeam, bestMoveStr, cfg.AutoPlay, isGameOver, cfg.AutoClaimXP, cfg.AutoStartGame, cfg.GameType)
+		terminal.RenderTerminal(stableBoard, state, currentMove, myTeam, bestMoveStr, cfg.AutoPlay, isGameOver, cfg.Duolingo.AutoClaimXP, cfg.Duolingo.AutoStartGame, cfg.Duolingo.GameType)
 
 		isMyKingCheck := false
 		isOppKingCheck := false
@@ -492,7 +488,7 @@ func Run() {
 		}
 
 		if enableHistory {
-			recorder.RecordFrame(stableBoard, state, currentMove, myTeam, bestMoveStr, bestFrom, bestTo, isGameOver, bestMoveStr, cfg.GameType)
+			recorder.RecordFrame(stableBoard, state, currentMove, myTeam, bestMoveStr, bestFrom, bestTo, isGameOver, bestMoveStr, cfg.Duolingo.GameType)
 		}
 
 		elapsed := time.Since(start)

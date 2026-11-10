@@ -125,8 +125,12 @@ func removeBackground(src image.Image) *image.NRGBA {
 }
 
 func main() {
-	inDir := "Figures"
-	outDir := "Figures/WEB"
+	inDir := filepath.Join("Figures", "Duolingo")
+	if fi, err := os.Stat(inDir); err != nil || !fi.IsDir() {
+		inDir = "Figures"
+	}
+	outDir := filepath.Join(inDir, "WEB")
+	_ = os.MkdirAll(outDir, 0755)
 
 	entries, err := os.ReadDir(inDir)
 	if err != nil {

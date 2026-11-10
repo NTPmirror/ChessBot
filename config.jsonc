@@ -1,32 +1,28 @@
 {
+  "service": "duolingo",
+
   "interval_ms": 10,
-
   "web_port": 5873,
-
   "enable_web": false,
 
-  "y_ratio_oscar": 0.35625,
-  "y_ratio_people": 0.336,
-
-  "figures_dir": "./Figures",
-
   "max_error_threshold": 2500.0,
-
   "stability_threshold": 2,
 
   "auto_play": true,
-
-  "auto_claim_xp": true,
-
-  "auto_start_game": true,
-
-  "game_type": "People",
-
   "humanize": true,
 
   "move_delay_min_ms": 500,
   "move_delay_max_ms": 1500,
 
   "tap_delay_min_ms": 140,
-  "tap_delay_max_ms": 280
+  "tap_delay_max_ms": 280,
+
+  "duolingo": {
+    "figures_dir": "./Figures/Duolingo",
+    "game_type": "People",
+    "y_ratio_oscar": 0.35625,
+    "y_ratio_people": 0.336,
+    "auto_claim_xp": true,
+    "auto_start_game": true
+  }
 }
