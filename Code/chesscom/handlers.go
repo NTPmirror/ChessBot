@@ -36,23 +36,20 @@ func DetectContextualAction(frame image.Image) *PopupAction {
 	b := frame.Bounds()
 	w, h := b.Dx(), b.Dy()
 
-	// 1. Post-Game Modal Overlay detection (e.g. "Черные победили", "Отчет о партии", etc.)
-	// When game ends, a dark card appears on screen with text "Черные победили" / "Белые победили"
-	// centered around y ~ 480 px (y ~ 0.20), where background is dark (#212426, r,g,b < 50),
-	// NOT a chessboard square!
+	// 1. Post-Game Modal Overlay detection
+	// When game ends, a dark modal banner appears at y ~ 480 px (y ~ 0.20), where background is dark (r,g,b < 50)
 	bannerBg := frame.At(w/2, int(float64(h)*0.20))
 	br, bg, bb, _ := bannerBg.RGBA()
 	isDarkBanner := (br>>8) < 50 && (bg>>8) < 50 && (bb>>8) < 50
 
 	if isDarkBanner {
-		// Verify there is a green "Отчет о партии" button at y ~ 0.60
+		// End-game action button at y ~ 0.60
 		reportBtnX := int(float64(w) * 0.50)
 		for _, reportY := range []int{int(float64(h) * 0.446), int(float64(h) * 0.61)} {
 			cReport := frame.At(reportBtnX, reportY)
 			rr, rg, rb, _ := cReport.RGBA()
 			if isGreenButton(int(rr>>8), int(rg>>8), int(rb>>8)) {
-				// Found end-game modal with "Отчет о партии" on dark banner.
-				// Tap the Chess.com logo (x=265, y=190) to return to main menu!
+				// Navigate to home menu via logo tap
 				return &PopupAction{
 					Type: "go_home",
 					TapX: int(float64(w) * 0.245),
@@ -61,7 +58,7 @@ func DetectContextualAction(frame image.Image) *PopupAction {
 			}
 		}
 
-		// Also check close button "X" on end-game modal
+		// Close button 'X' on end-game modal
 		for _, cy := range []float64{0.190, 0.247} {
 			egCloseX := int(float64(w) * 0.934)
 			egCloseY := int(float64(h) * cy)
@@ -78,14 +75,13 @@ func DetectContextualAction(frame image.Image) *PopupAction {
 		}
 	}
 
-	// 1b. Main Menu detection: large green "Играть по сети" button
-	// On Chess.com home menu, "Играть по сети" is located between y ~ 0.25 and 0.45 (y ~ 670..950 px)
+	// 1b. Main Menu detection: primary action button
+	// On Chess.com home menu, action button is located between y ~ 0.25 and 0.45 (y ~ 670..950 px)
 	for _, testFrac := range []float64{0.30, 0.38, 0.35, 0.32} {
 		testY := int(float64(h) * testFrac)
 		cBtn := frame.At(w/2, testY)
 		br, bg, bb, _ := cBtn.RGBA()
 		if isGreenButton(int(br>>8), int(bg>>8), int(bb>>8)) {
-			// Found "Играть по сети" button on home screen! Click it!
 			return &PopupAction{
 				Type: "click_play_online",
 				TapX: w / 2,
@@ -94,10 +90,8 @@ func DetectContextualAction(frame image.Image) *PopupAction {
 		}
 	}
 
-	// 2. "Play" / "Играть" button check (online lobby or bottom screen)
-	// Must be checked BEFORE sheet dismissal to avoid false positive in lobby!
-	// In Chess.com mobile web, when on chess.com/play/online, the large green "Играть" button
-	// is located between y ~ 0.55 and 0.95 (e.g. y ~ 1447 px).
+	// 2. Play button check (online lobby or bottom screen)
+	// Located between y ~ 0.55 and 0.95 (e.g. y ~ 1447 px).
 	var foundGreenY int
 	foundGreenCount := 0
 	for yFrac := 0.55; yFrac <= 0.95; yFrac += 0.01 {
@@ -113,7 +107,7 @@ func DetectContextualAction(frame image.Image) *PopupAction {
 	}
 
 	if foundGreenCount >= 3 {
-		// If button is located below y=0.82, it's partially cut off or covered by browser UI; swipe up to bring it up!
+		// Button located below y=0.82 requires scroll up
 		if float64(foundGreenY) > float64(h)*0.82 {
 			return &PopupAction{
 				Type:   "scroll_play",
@@ -130,12 +124,9 @@ func DetectContextualAction(frame image.Image) *PopupAction {
 		}
 	}
 
-	// 3. Check if the bottom sheet is covering the board during an active match!
-	// When covered: Board is at y=128..818 (height ~691 px).
-	// A tab bar ("Ходы", "Чат", "Информация" or handle) is at y=840..1150.
-	// We MUST swipe down (from y=1000 to y=1800) to uncover the full 1064px board!
+	// 3. Occlusion sheet detection over board
 	topBoardCheckY := int(float64(h) * 0.10)
-	midBoardCheckY := int(float64(h) * 0.42) // inside board if uncovered, or inside sheet if covered
+	midBoardCheckY := int(float64(h) * 0.42)
 	cTop := frame.At(w/2, topBoardCheckY)
 	tr, tg, tb, _ := cTop.RGBA()
 	isTopBoard := isBoardSquareColor(int(tr>>8), int(tg>>8), int(tb>>8))
@@ -144,9 +135,7 @@ func DetectContextualAction(frame image.Image) *PopupAction {
 	mr, mg, mb, _ := cMid.RGBA()
 	mr8, mg8, mb8 := int(mr>>8), int(mg>>8), int(mb>>8)
 
-	// In live match with sheet open: top is board (y~200), but y~1000 (0.42*2400) is sheet (dark gray / tabs)!
 	if isTopBoard && (mr8 < 60 && mg8 < 60 && mb8 < 60) {
-		// Board is partially covered by bottom sheet! Swipe down to reveal full board!
 		return &PopupAction{
 			Type:   "dismiss_sheet",
 			Swipe:  true,
@@ -155,7 +144,7 @@ func DetectContextualAction(frame image.Image) *PopupAction {
 		}
 	}
 
-	// 3. Modal Dialog "Играть с ботами" / "Start" button
+	// 4. Modal Dialog Start button
 	modalBtnX := int(float64(w) * 0.50)
 	modalBtnY := int(float64(h) * 0.695)
 	cModalBtn := frame.At(modalBtnX, modalBtnY)

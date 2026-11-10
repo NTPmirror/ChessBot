@@ -20,6 +20,7 @@ DuolingoBot.exe
 *.jpeg
 !Figures/*.png
 !Figures/WEB/*.png
+!Figures/ChessCom/*.png
 Figures/current_screen.png
 Figures/live_screen.png
 
