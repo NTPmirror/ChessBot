@@ -24,9 +24,9 @@ func To32x32Grayscale(src image.Image) [32 * 32]float64 {
 			red, green, blue, _ := pixel.RGBA()
 			r8, g8, b8 := red>>8, green>>8, blue>>8
 
-			if r8 > 60 && r8 >= b8 && (r8+g8) > 130 {
-				out[y*32+x] = bgFallback
-			} else if r8 > 175 && g8 > 135 && b8 < 90 && (int(r8)-int(b8) > 95) {
+			// Yellow highlight filter (both Duolingo and Chess.com)
+			// Highlight is saturated yellow (R > 150, G > 140, and R - B > 70)
+			if r8 > 150 && g8 > 140 && int(r8)-int(b8) > 70 {
 				out[y*32+x] = bgFallback
 			} else {
 				c := color.GrayModel.Convert(pixel).(color.Gray)
@@ -51,13 +51,20 @@ func IsSquareEmpty(cell [32 * 32]float64, bgLum float64) bool {
 
 func ComparePieceMask(cell [32 * 32]float64, cellBg float64, tmpl PieceTemplate) float64 {
 	var sum, count float64
-	for i := 0; i < 32*32; i++ {
-		cellDiff := math.Abs(cell[i] - cellBg)
+	for y := 0; y < 32; y++ {
+		for x := 0; x < 32; x++ {
+			// Mask out top-right corner (rank numbers in col h) and bottom-left corner (file letters in rank 1)
+			if (y < 8 && x > 23) || (y > 23 && x < 8) {
+				continue
+			}
+			i := y*32 + x
+			cellDiff := math.Abs(cell[i] - cellBg)
 		tmplDiff := math.Abs(tmpl.Grays[i] - tmpl.BgLum)
 		if cellDiff > 16.0 || tmplDiff > 16.0 {
-			d := cell[i] - tmpl.Grays[i]
-			sum += d * d
-			count++
+				d := cell[i] - tmpl.Grays[i]
+				sum += d * d
+				count++
+			}
 		}
 	}
 	if count < 30 {
@@ -83,14 +90,21 @@ func Process(frame image.Image, templates []PieceTemplate, yRatio float64, maxEr
 
 	cellW := float64(w) / 8.0
 	cellH := cellW
+	startX := 0.0
 	startY := float64(h) * yRatio
+
+	if yRatio < 0.25 && w >= 1000 {
+		cellW = float64(w) * 0.985 / 8.0
+		cellH = cellW
+		startX = float64(w) * 0.0074
+	}
 
 	for row := 0; row < 8; row++ {
 		for col := 0; col < 8; col++ {
 			rect := image.Rect(
-				int(float64(col)*cellW),
+				int(startX+float64(col)*cellW),
 				int(startY+float64(row)*cellH),
-				int(float64(col+1)*cellW),
+				int(startX+float64(col+1)*cellW),
 				int(startY+float64(row+1)*cellH),
 			)
 
@@ -122,7 +136,7 @@ func Process(frame image.Image, templates []PieceTemplate, yRatio float64, maxEr
 				{int(cellW) - 8, int(cellH) - 8},
 			}
 			for _, off := range offsets {
-				px := int(float64(col)*cellW) + off[0]
+				px := int(startX+float64(col)*cellW) + off[0]
 				py := int(startY+float64(row)*cellH) + off[1]
 				cSample := frame.At(px, py)
 				sr, sg, sb, _ := cSample.RGBA()

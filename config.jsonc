@@ -1,11 +1,12 @@
 {
-  "service": "duolingo",
+  // "duolingo" or "chesscom"
+  "service": "chesscom",
 
   "interval_ms": 10,
   "web_port": 5873,
   "enable_web": false,
 
-  "max_error_threshold": 2500.0,
+  "max_error_threshold": 3800.0,
   "stability_threshold": 2,
 
   "auto_play": true,
@@ -24,5 +25,12 @@
     "y_ratio_people": 0.336,
     "auto_claim_xp": true,
     "auto_start_game": true
+  },
+
+  "chesscom": {
+    "figures_dir": "./Figures/ChessCom",
+    "y_ratio": 0.16875,
+    "auto_start_game": true,
+    "auto_dismiss": true
   }
 }

@@ -9,6 +9,13 @@ import (
 	"strings"
 )
 
+type ChessComConfig struct {
+	FiguresDir    string  `json:"figures_dir"`
+	YRatio        float64 `json:"y_ratio"`
+	AutoStartGame bool    `json:"auto_start_game"`
+	AutoDismiss   bool    `json:"auto_dismiss"`
+}
+
 type DuolingoConfig struct {
 	FiguresDir    string  `json:"figures_dir"`
 	YRatio        float64 `json:"y_ratio"`
@@ -36,6 +43,7 @@ type Config struct {
 	TapDelayMaxMs  int  `json:"tap_delay_max_ms"`
 
 	Duolingo DuolingoConfig `json:"duolingo"`
+	ChessCom ChessComConfig `json:"chesscom"`
 
 	// Deprecated / backwards compatibility fields (for root config fallback)
 	FiguresDir         string  `json:"figures_dir,omitempty"`
@@ -132,6 +140,12 @@ func LoadConfig(path string) Config {
 			GameType:      "People",
 			AutoClaimXP:   true,
 			AutoStartGame: true,
+		},
+		ChessCom: ChessComConfig{
+			FiguresDir:    "./Figures/ChessCom",
+			YRatio:        0.16875,
+			AutoStartGame: true,
+			AutoDismiss:   true,
 		},
 	}
 

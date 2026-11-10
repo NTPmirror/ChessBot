@@ -73,27 +73,28 @@ func FindPendingPromotion(board [8][8]string, myTeam string) (int, int, bool) {
 
 
 func EnsureKingPresence(b [8][8]string, lastB [8][8]string, team string) [8][8]string {
-	if team == "" {
-		return b
-	}
-	targetKing := "wK"
-	if team == "Black" {
-		targetKing = "bK"
-	}
-
-	for r := 0; r < 8; r++ {
-		for c := 0; c < 8; c++ {
-			if b[r][c] == targetKing {
-				return b
+	kings := []string{"wK", "bK"}
+	for _, targetKing := range kings {
+		found := false
+		for r := 0; r < 8; r++ {
+			for c := 0; c < 8; c++ {
+				if b[r][c] == targetKing {
+					found = true
+					break
+				}
+			}
+			if found {
+				break
 			}
 		}
-	}
-
-	for r := 0; r < 8; r++ {
-		for c := 0; c < 8; c++ {
-			if lastB[r][c] == targetKing {
-				b[r][c] = targetKing
-				return b
+		if !found {
+			for r := 0; r < 8; r++ {
+				for c := 0; c < 8; c++ {
+					if lastB[r][c] == targetKing {
+						b[r][c] = targetKing
+						break
+					}
+				}
 			}
 		}
 	}

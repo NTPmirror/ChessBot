@@ -110,6 +110,21 @@ func CaptureScreen(adbPath string) (image.Image, error) {
 	return img, err
 }
 
+
+func Swipe(adbPath string, x1, y1, x2, y2, durationMs int) error {
+	var cmd *exec.Cmd
+	if isDirectRootMode {
+		if detectedSuPath != "" {
+			cmd = exec.Command(detectedSuPath, "-c", fmt.Sprintf("input swipe %d %d %d %d %d", x1, y1, x2, y2, durationMs))
+		} else {
+			cmd = exec.Command("input", "swipe", fmt.Sprintf("%d", x1), fmt.Sprintf("%d", y1), fmt.Sprintf("%d", x2), fmt.Sprintf("%d", y2), fmt.Sprintf("%d", durationMs))
+		}
+	} else {
+		cmd = exec.Command(adbPath, "shell", "input", "swipe", fmt.Sprintf("%d", x1), fmt.Sprintf("%d", y1), fmt.Sprintf("%d", x2), fmt.Sprintf("%d", y2), fmt.Sprintf("%d", durationMs))
+	}
+	return cmd.Run()
+}
+
 func Tap(adbPath string, x, y int) error {
 	var cmd *exec.Cmd
 	if isDirectRootMode {
@@ -127,12 +142,19 @@ func Tap(adbPath string, x, y int) error {
 func ExecuteMove(adbPath string, screenW, screenH int, yRatio float64, m engine.Move, tapDelayMs ...int) error {
 	cellW := float64(screenW) / 8.0
 	cellH := cellW
+	startX := 0.0
 	startY := float64(screenH) * yRatio
 
-	fromX := int((float64(m.FromC) + 0.5) * cellW)
+	if yRatio < 0.25 && screenW >= 1000 {
+		cellW = float64(screenW) * 0.985 / 8.0
+		cellH = cellW
+		startX = float64(screenW) * 0.0074
+	}
+
+	fromX := int(startX + (float64(m.FromC)+0.5)*cellW)
 	fromY := int(startY + (float64(m.FromR)+0.5)*cellH)
 
-	toX := int((float64(m.ToC) + 0.5) * cellW)
+	toX := int(startX + (float64(m.ToC)+0.5)*cellW)
 	toY := int(startY + (float64(m.ToR)+0.5)*cellH)
 
 	isPromotion := len(m.Piece) >= 2 && m.Piece[1] == 'P' && (m.ToR == 0 || m.ToR == 7)

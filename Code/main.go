@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"chessbot/Code/board"
+	"chessbot/Code/chesscom"
 	"chessbot/Code/config"
 	"chessbot/Code/duolingo"
 	"chessbot/Code/engine"
@@ -89,27 +90,41 @@ func Run() {
 		}
 	}
 
+	isChessCom := strings.EqualFold(cfg.Service, "chesscom")
+	activeFiguresDir := cfg.Duolingo.FiguresDir
 	activeYRatio := cfg.Duolingo.YRatio
 	isPeopleMode := strings.EqualFold(cfg.Duolingo.GameType, "People")
 	isOscarMode := strings.EqualFold(cfg.Duolingo.GameType, "Oscar")
-	if isPeopleMode {
-		if cfg.Duolingo.YRatioPeople > 0 {
-			activeYRatio = cfg.Duolingo.YRatioPeople
-		} else {
-			activeYRatio = 0.336
+
+	if isChessCom {
+		activeFiguresDir = cfg.ChessCom.FiguresDir
+		if activeFiguresDir == "" {
+			activeFiguresDir = "./Figures/ChessCom"
+		}
+		activeYRatio = cfg.ChessCom.YRatio
+		if activeYRatio <= 0 {
+			activeYRatio = 0.16875
 		}
 	} else {
-		if cfg.Duolingo.YRatioOscar > 0 {
-			activeYRatio = cfg.Duolingo.YRatioOscar
+		if isPeopleMode {
+			if cfg.Duolingo.YRatioPeople > 0 {
+				activeYRatio = cfg.Duolingo.YRatioPeople
+			} else {
+				activeYRatio = 0.336
+			}
 		} else {
-			activeYRatio = 0.355
+			if cfg.Duolingo.YRatioOscar > 0 {
+				activeYRatio = cfg.Duolingo.YRatioOscar
+			} else {
+				activeYRatio = 0.355
+			}
 		}
 	}
 
 	adbPath := recognizer.FindADBPath()
 	log.Printf("ADB binary ready: %s", adbPath)
 
-	templates, err := recognizer.LoadTemplates(cfg.Duolingo.FiguresDir)
+	templates, err := recognizer.LoadTemplates(activeFiguresDir)
 	if err != nil {
 		log.Fatalf("Template load error: %v", err)
 	}
@@ -174,7 +189,7 @@ func Run() {
 		w := frame.Bounds().Dx()
 		h := frame.Bounds().Dy()
 
-		if isPeopleMode && duolingo.IsMatchmakingScreen(frame) {
+		if !isChessCom && isPeopleMode && duolingo.IsMatchmakingScreen(frame) {
 			terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "Searching for opponent...", cfg.AutoPlay, false, cfg.Duolingo.AutoClaimXP, cfg.Duolingo.AutoStartGame, cfg.Duolingo.GameType)
 			if enableWeb && hub != nil {
 				hub.Broadcast([8][8]string{}, 0, "-", "-", "Searching for opponent...", [2]int{-1, -1}, [2]int{-1, -1}, false, false, false)
@@ -184,10 +199,40 @@ func Run() {
 			continue
 		}
 
+		if isChessCom {
+			// 1. Contextual Action & Popups handling
+			if cfg.ChessCom.AutoDismiss || cfg.ChessCom.AutoStartGame {
+				popup := chesscom.DetectContextualAction(frame)
+				if popup != nil {
+					if popup.Swipe {
+						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", "ChessCom: Revealing covered button...", cfg.AutoPlay, false, false, cfg.ChessCom.AutoStartGame, "ChessCom")
+						_ = recognizer.Swipe(adbPath, popup.SwipeX[0], popup.SwipeY[0], popup.SwipeX[1], popup.SwipeY[1], 300)
+						time.Sleep(600 * time.Millisecond)
+						continue
+					} else if popup.TapX > 0 && popup.TapY > 0 {
+						msg := "ChessCom: Dismissing popup / starting..."
+						if popup.Type == "click_play" || popup.Type == "new_game" {
+							msg = "ChessCom: Starting new game..."
+						}
+						terminal.RenderTerminal([8][8]string{}, 0, "-", "-", msg, cfg.AutoPlay, false, false, cfg.ChessCom.AutoStartGame, "ChessCom")
+						_ = recognizer.Tap(adbPath, popup.TapX, popup.TapY)
+						time.Sleep(1500 * time.Millisecond)
+						resetMatchState()
+						continue
+					}
+				}
+			}
+
+			// Dynamically adjust Y ratio if uncovered match board vs top lobby board
+			if detectedY, ok := chesscom.DetectActiveBoardY(frame); ok {
+				activeYRatio = float64(detectedY) / float64(h)
+			}
+		}
+
 		rawBoard := recognizer.Process(frame, templates, activeYRatio, cfg.MaxErrorThreshold)
 		pieceCount := board.CountBoardPieces(rawBoard)
 
-		if duolingo.IsLobbyScreen(frame) {
+		if !isChessCom && duolingo.IsLobbyScreen(frame) {
 			if cfg.Duolingo.AutoStartGame {
 				if duolingo.IsNewLobbyScreen(frame) {
 					// Card 0: Oscar, Card 1: Lily, Card 2: People (Play)
@@ -247,7 +292,11 @@ func Run() {
 			}
 		}
 
-		btnType, btnX, btnY := duolingo.DetectActionButton(frame)
+		var btnType string
+		var btnX, btnY int
+		if !isChessCom {
+			btnType, btnX, btnY = duolingo.DetectActionButton(frame)
+		}
 
 		if pieceCount < 4 {
 			if cfg.Duolingo.AutoClaimXP && duolingo.IsChestScreen(frame) {
@@ -301,10 +350,6 @@ func Run() {
 		}
 
 		highlightWho, _, _ := recognizer.DetectLastMoveHighlight(frame, activeYRatio, stableBoard)
-		clockTurn := duolingo.DetectActiveClockTurn(frame)
-		if clockTurn != "" {
-			currentMove = clockTurn
-		}
 
 		if !board.IsBoardEqual(lastStableBoard, stableBoard) {
 			if detectedTeam := board.DetermineMyTeam(stableBoard); detectedTeam != "" {
@@ -329,6 +374,16 @@ func Run() {
 				}
 			}
 			lastStableBoard = stableBoard
+		}
+
+		var clockTurn string
+		if isChessCom {
+			clockTurn = chesscom.DetectActiveClockTurn(frame, myTeam)
+		} else {
+			clockTurn = duolingo.DetectActiveClockTurn(frame)
+		}
+		if clockTurn != "" {
+			currentMove = clockTurn
 		}
 
 		if state == 1 && myTeam != "" && currentMove != myTeam {
@@ -416,7 +471,12 @@ func Run() {
 			bestTo = [2]int{promR, promC}
 
 			if cfg.AutoPlay {
-				qX, qY := duolingo.GetPromotionQueenTap(w, h, activeYRatio, promR, promC)
+				var qX, qY int
+				if isChessCom {
+					qX, qY = chesscom.GetPromotionQueenTap(w, h, promC)
+				} else {
+					qX, qY = duolingo.GetPromotionQueenTap(w, h, activeYRatio, promR, promC)
+				}
 				_ = recognizer.Tap(adbPath, qX, qY)
 				time.Sleep(600 * time.Millisecond)
 			}
